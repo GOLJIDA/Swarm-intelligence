@@ -8,7 +8,7 @@ with open('distance_matrix.data', 'rb') as f:
 pheromon_matrix = [[0.05 for i in range(len(o_distance_matrix))]
                    for i in range(len(o_distance_matrix))]
 alpla = 0.1
-beta = 0.01
+beta = 0.1
 
 
 # endregion
@@ -69,7 +69,9 @@ def main(d_matrix, p_matrix, amount_of_ants):
     max_distance = 0
     total_distance = 0
     survived = 0
+    counter = 0
     for go in range(amount_of_ants):
+        print(f'Ant number {counter + 1} is on his way')
         # temp variables
         temp_total_distance = 0
         current_city = 0
@@ -116,9 +118,17 @@ def main(d_matrix, p_matrix, amount_of_ants):
                 else:
                     p_matrix = sub_matrix(p_matrix, temp_p_matrix)
                     break
-    print(total_distance)
-    print(min_distance)
-    print(max_distance)
+        counter += 1
+        if survived > 0:
+            print(f'{survived} ants made it to the end\nThe longest way was - {max_distance}.\nThe shortest way was - '
+                  f'{min_distance}.\nTotal distance that was overcomed is - {total_distance}, with average distance - '
+                  f'{int(total_distance / survived)}')
+        else:
+            print(f'No one survived so far')
+
+    print(f'{survived} ants made it to the end\nThe longest way was - {max_distance}.\nThe shortest way was - '
+          f'{min_distance}.\nTotal distance that was overcomed is - {total_distance}, with average distance - '
+          f'{total_distance / survived}')
 
 
-main(o_distance_matrix, pheromon_matrix, 2000)
+main(o_distance_matrix, pheromon_matrix, 80000)
