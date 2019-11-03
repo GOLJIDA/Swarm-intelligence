@@ -1,38 +1,124 @@
 import pickle
 import random
 
+# region data
 with open('distance_matrix.data', 'rb') as f:
-    distance_matrix = pickle.load(f)
+    o_distance_matrix = pickle.load(f)
 
-city_array = []
-
+pheromon_matrix = [[0.05 for i in range(len(o_distance_matrix))]
+                   for i in range(len(o_distance_matrix))]
 alpla = 0.1
-beta = 0.1
-pheromon = 0.1
-
-current_best = 0
-
-current_city = 0
+beta = 0.01
 
 
-path_raw_value = lambda pheromon, distance, beta: pheromon * ((1/distance)**beta)
+# endregion
 
 
-def reduction_to_one(element, array):
-    return element / sum(array)
+# region functions
+
+def raw_path_value(distance, pheromon):
+    global beta
+    if distance > 0:
+        return round(pheromon * ((1 / distance) ** beta), 4)
+    else:
+        return 0
 
 
-def get_raw_array()
-    raw_array = []
-    for i in distance_matrix[0]:
-        raw_array.append(path_raw_value(pheromon, i, beta))
-    return raw_array
+def reducted_value(distance, array_sum):
+    return distance / array_sum
 
 
-after_reduction_array = []
-for i in raw_array:
-    after_reduction_array.append(reduction_to_one(i, raw_array))
+# result = pheromon * ((1/distance)**beta)
+def sum_matrix(matrixo, matrixt):
+    result = [[0 for i in range(len(matrixo))] for i in range(len(matrixo))]
+    for i in range(len(matrixo)):
+        for j in range(len(matrixt[0])):
+            result[i][j] = matrixo[i][j] + matrixt[i][j]
+    return result
 
 
-def test():
-    pass
+def sub_matrix(matrixo, matrixt):
+    result = [[0 for i in range(len(matrixo))] for i in range(len(matrixo))]
+    for i in range(len(matrixo)):
+        for j in range(len(matrixt[0])):
+            temp = matrixo[i][j] - matrixt[i][j]
+            if temp < 0.01:
+                result[i][j] = 0.01
+            else:
+                result[i][j] = temp
+    return result
+
+
+def choose_way(array):
+    rand = round(random.random(), 4)
+    summ = 0
+    for i in range(len(array)):
+        if summ + array[i] > rand:
+            return i
+        else:
+            summ += array[i]
+    return len(array) - 1
+
+
+# endregion
+
+
+def main(d_matrix, p_matrix, amount_of_ants):
+    const_d_matrix = d_matrix * 1
+    min_distance = 10000000000
+    max_distance = 0
+    total_distance = 0
+    survived = 0
+    for go in range(amount_of_ants):
+        # temp variables
+        temp_total_distance = 0
+        current_city = 0
+        with open('distance_matrix.data', 'rb') as f:
+            temp_d_matrix= pickle.load(f)
+        temp_p_matrix = [[0.01 for i in range(len(p_matrix))]
+                         for i in range(len(p_matrix))]
+        # while there are dots
+        while True:
+            city_check = 0
+            for city in temp_d_matrix[current_city]:
+                if city > 0:
+                    city_check += 1
+            if city_check > 0:
+                # calculations to choose way
+                raw_values_array = list(map(raw_path_value, temp_d_matrix[current_city], p_matrix[current_city]))
+                raw_value_sum = sum(raw_values_array)
+                reducted_value_array = [round(reducted_value(distance, raw_value_sum), 4)
+                                        for distance in raw_values_array]
+                chosen_way = choose_way(reducted_value_array)
+                # recording the data
+                temp_total_distance += const_d_matrix[current_city][chosen_way]
+                temp_d_matrix[current_city][chosen_way] = -1
+                temp_p_matrix[current_city][chosen_way] += 0.01
+                # changing the city
+                current_city = chosen_way
+            else:
+                check = 0
+                for k in temp_d_matrix:
+                    for h in k:
+                        if h > 0:
+                            check += 1
+                if check <= 0:
+                    # if not (map(lambda x: True if (sum(array_of_distances) > 0 for array_of_distances in x)
+                    # else False, temp_d_matrix)):
+                    total_distance += temp_total_distance
+                    p_matrix = sum_matrix(p_matrix, temp_p_matrix)
+                    if max_distance < temp_total_distance:
+                        max_distance = temp_total_distance
+                    if 0 < temp_total_distance < min_distance:
+                        min_distance = temp_total_distance
+                    survived += 1
+                    break
+                else:
+                    p_matrix = sub_matrix(p_matrix, temp_p_matrix)
+                    break
+    print(total_distance)
+    print(min_distance)
+    print(max_distance)
+
+
+main(o_distance_matrix, pheromon_matrix, 2000)
