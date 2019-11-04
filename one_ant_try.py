@@ -1,21 +1,21 @@
 import pickle
 import random
+import time
+import copy
+
 
 # region data
 with open('distance_matrix.data', 'rb') as f:
     o_distance_matrix = pickle.load(f)
 
-pheromon_matrix = [[0.05 for i in range(len(o_distance_matrix))]
+pheromon_matrix = [[0.01 for i in range(len(o_distance_matrix))]
                    for i in range(len(o_distance_matrix))]
-alpla = 0.1
-beta = 0.1
-
-
+alpha = 0.1
+beta = 0.5
 # endregion
 
 
 # region functions
-
 def raw_path_value(distance, pheromon):
     global beta
     if distance > 0:
@@ -24,15 +24,15 @@ def raw_path_value(distance, pheromon):
         return 0
 
 
-def reducted_value(distance, array_sum):
-    return distance / array_sum
+def reducted_value(value, array_sum):
+    return value / array_sum
 
 
-# result = pheromon * ((1/distance)**beta)
+
 def sum_matrix(matrixo, matrixt):
     result = [[0 for i in range(len(matrixo))] for i in range(len(matrixo))]
     for i in range(len(matrixo)):
-        for j in range(len(matrixt[0])):
+        for j in range(len(matrixt)):
             result[i][j] = matrixo[i][j] + matrixt[i][j]
     return result
 
@@ -40,8 +40,8 @@ def sum_matrix(matrixo, matrixt):
 def sub_matrix(matrixo, matrixt):
     result = [[0 for i in range(len(matrixo))] for i in range(len(matrixo))]
     for i in range(len(matrixo)):
-        for j in range(len(matrixt[0])):
-            temp = matrixo[i][j] - matrixt[i][j]
+        for j in range(len(matrixo)):
+            temp = round(matrixo[i][j] - matrixt[i][j], 2)
             if temp < 0.01:
                 result[i][j] = 0.01
             else:
@@ -58,77 +58,67 @@ def choose_way(array):
         else:
             summ += array[i]
     return len(array) - 1
-
-
 # endregion
 
 
 def main(d_matrix, p_matrix, amount_of_ants):
-    const_d_matrix = d_matrix * 1
+    # function variables
     min_distance = 10000000000
     max_distance = 0
     total_distance = 0
     survived = 0
     counter = 0
-    for go in range(amount_of_ants):
-        print(f'Ant number {counter + 1} is on his way')
+    # go for amount of ants
+    for _ in range(amount_of_ants):
+        # print(f'Ant number {counter + 1} is on his way')        
+        city_to_visit = copy.deepcopy(d_matrix[0])
         # temp variables
         temp_total_distance = 0
         current_city = 0
-        with open('distance_matrix.data', 'rb') as f:
-            temp_d_matrix= pickle.load(f)
-        temp_p_matrix = [[0.01 for i in range(len(p_matrix))]
+        temp_d_matrix = copy.deepcopy(d_matrix)
+        temp_p_matrix = [[0 for i in range(len(p_matrix))]
                          for i in range(len(p_matrix))]
         # while there are dots
+        # print(d_matrix)
+        # print(p_matrix)
         while True:
-            city_check = 0
-            for city in temp_d_matrix[current_city]:
-                if city > 0:
-                    city_check += 1
-            if city_check > 0:
-                # calculations to choose way
-                raw_values_array = list(map(raw_path_value, temp_d_matrix[current_city], p_matrix[current_city]))
-                raw_value_sum = sum(raw_values_array)
-                reducted_value_array = [round(reducted_value(distance, raw_value_sum), 4)
-                                        for distance in raw_values_array]
-                chosen_way = choose_way(reducted_value_array)
-                # recording the data
-                temp_total_distance += const_d_matrix[current_city][chosen_way]
-                temp_d_matrix[current_city][chosen_way] = -1
-                temp_p_matrix[current_city][chosen_way] += 0.01
-                # changing the city
-                current_city = chosen_way
-            else:
-                check = 0
-                for k in temp_d_matrix:
-                    for h in k:
-                        if h > 0:
-                            check += 1
-                if check <= 0:
-                    # if not (map(lambda x: True if (sum(array_of_distances) > 0 for array_of_distances in x)
-                    # else False, temp_d_matrix)):
-                    total_distance += temp_total_distance
-                    p_matrix = sum_matrix(p_matrix, temp_p_matrix)
-                    if max_distance < temp_total_distance:
-                        max_distance = temp_total_distance
-                    if 0 < temp_total_distance < min_distance:
-                        min_distance = temp_total_distance
-                    survived += 1
-                    break
+            if not all(city == -1 for city in city_to_visit):
+                if not all(ways == -1 for ways in temp_d_matrix[current_city]):
+                    # calculations to choose way
+                    raw_values_array = list(map(raw_path_value, temp_d_matrix[current_city], p_matrix[current_city]))
+                    raw_value_sum = sum(raw_values_array)
+                    reducted_value_array = [round(reducted_value(value, raw_value_sum), 4)
+                                            for value in raw_values_array]
+                    chosen_way = choose_way(reducted_value_array)
+
+                    # recording the data
+                    temp_total_distance += temp_d_matrix[current_city][chosen_way]
+                    temp_d_matrix[current_city][chosen_way] = -1
+                    city_to_visit[current_city] = -1
+                    temp_p_matrix[current_city][chosen_way] += 0.01
+
+                    # changing the city
+                    current_city = chosen_way
                 else:
                     p_matrix = sub_matrix(p_matrix, temp_p_matrix)
                     break
+            else:
+                survived += 1
+                total_distance += temp_total_distance
+                p_matrix = sum_matrix(p_matrix, temp_p_matrix)
+                if max_distance < temp_total_distance:
+                    max_distance = temp_total_distance
+                if min_distance > temp_total_distance > 0:
+                    min_distance = temp_total_distance
+                break
         counter += 1
-        if survived > 0:
-            print(f'{survived} ants made it to the end\nThe longest way was - {max_distance}.\nThe shortest way was - '
-                  f'{min_distance}.\nTotal distance that was overcomed is - {total_distance}, with average distance - '
-                  f'{int(total_distance / survived)}')
-        else:
-            print(f'No one survived so far')
-
-    print(f'{survived} ants made it to the end\nThe longest way was - {max_distance}.\nThe shortest way was - '
-          f'{min_distance}.\nTotal distance that was overcomed is - {total_distance}, with average distance - '
-          f'{total_distance / survived}')
+    print(total_distance)
+    print(total_distance / counter)
+    print(survived)
+    print(max_distance)
+    print(min_distance)
 
 
-main(o_distance_matrix, pheromon_matrix, 80000)
+start_time = time.time()
+main(o_distance_matrix, pheromon_matrix, 1000)
+print(time.time() - start_time)
