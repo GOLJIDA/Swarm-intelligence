@@ -68,10 +68,16 @@ def main(d_matrix, p_matrix, amount_of_ants):
     total_distance = 0
     survived = 0
     counter = 0
+<<<<<<< HEAD
     # go for amount of ants
     for _ in range(amount_of_ants):
         # print(f'Ant number {counter + 1} is on his way')        
         city_to_visit = copy.deepcopy(d_matrix[0])
+=======
+    for go in range(amount_of_ants):
+        city_to_visit = d_matrix[0]
+        print(f'Ant number {counter + 1} is on his way')
+>>>>>>> afac45dcdba1e58c0bf726ce81f76955d3efbb68
         # temp variables
         temp_total_distance = 0
         current_city = 0
@@ -82,6 +88,7 @@ def main(d_matrix, p_matrix, amount_of_ants):
         # print(d_matrix)
         # print(p_matrix)
         while True:
+<<<<<<< HEAD
             if not all(city == -1 for city in city_to_visit):
                 if not all(ways == -1 for ways in temp_d_matrix[current_city]):
                     # calculations to choose way
@@ -122,3 +129,33 @@ def main(d_matrix, p_matrix, amount_of_ants):
 start_time = time.time()
 main(o_distance_matrix, pheromon_matrix, 1000)
 print(time.time() - start_time)
+=======
+            city_to_visit_check = 0
+            # calculations to choose way
+            raw_values_array = list(map(raw_path_value, temp_d_matrix[current_city], p_matrix[current_city]))
+            raw_value_sum = sum(raw_values_array)
+            reducted_value_array = [round(reducted_value(distance, raw_value_sum), 4)
+                                    for distance in raw_values_array]
+            chosen_way = choose_way(reducted_value_array)
+            # recording the data
+            temp_total_distance += const_d_matrix[current_city][chosen_way]
+            temp_d_matrix[current_city][chosen_way] = -1
+            city_to_visit[chosen_way] = -1
+            temp_p_matrix[current_city][chosen_way] += 0.01
+            # changing the city
+            current_city = chosen_way
+            if not (map(lambda x: True if (sum(array_of_distances) > 0 for array_of_distances in x) else False, temp_d_matrix)):
+            total_distance += temp_total_distance
+            p_matrix = sum_matrix(p_matrix, temp_p_matrix)
+            if max_distance < temp_total_distance:
+                max_distance = temp_total_distance
+            if 0 < temp_total_distance < min_distance:
+                min_distance = temp_total_distance
+            p_matrix = sub_matrix(p_matrix, temp_p_matrix)
+            survived += 1
+            break
+
+
+
+main(o_distance_matrix, pheromon_matrix, 5000)
+>>>>>>> afac45dcdba1e58c0bf726ce81f76955d3efbb68
