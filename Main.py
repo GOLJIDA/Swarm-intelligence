@@ -1,15 +1,17 @@
-import pickle
-import random
-import time
-import copy
+# -*- coding: utf-8 -*-
+from pickle import load
+from random import random
+from time import time
+from copy import deepcopy
 
 # region data
-with open('distance_matrix.data', 'rb') as f:
-    o_distance_matrix = pickle.load(f)
+with open('distance_matrix.data', 'rb') as file:
+    o_distance_matrix = load(file)
 
 global pheromon_matrix
-pheromon_matrix = [[0.01 for i in range(len(o_distance_matrix))]
-                   for i in range(len(o_distance_matrix))]
+# 0.01 is a default value for cell in pheromon value
+pheromon_matrix = [[0.01 for _ in range(len(o_distance_matrix))]
+                    for _ in range(len(o_distance_matrix))]
 alpha = 0.1
 beta = 0.5
 # endregion
@@ -24,13 +26,13 @@ def raw_path_value(distance, pheromon):
         return 0
 
 
-def reducted_value(value, array):
-    return value / sum(array)
+def reducted_value(element_value, array):
+    return element_value / sum(array)
 
 
 def sum_matrix(first_matrix, second_matrix):
-    result_matrix = [[0 for i in range(len(first_matrix))]
-                     for i in range(len(first_matrix))]
+    result_matrix = [[0 for _ in range(len(first_matrix))]
+                     for _ in range(len(first_matrix))]
     for i in range(len(first_matrix)):
         for j in range(len(second_matrix)):
             result_matrix[i][j] = first_matrix[i][j] + second_matrix[i][j]
@@ -38,26 +40,27 @@ def sum_matrix(first_matrix, second_matrix):
 
 
 def sub_matrix(first_matrix, second_matrix):
-    result_matrix = [[0 for i in range(len(first_matrix))]
-                     for i in range(len(first_matrix))]
-    for i in range(len(first_matrix)):
-        for j in range(len(first_matrix)):
-            temp = round(first_matrix[i][j] - second_matrix[i][j], 2)
+    result_matrix = [[0 for _ in range(len(first_matrix))]
+                     for _ in range(len(first_matrix))]
+    for first_element in range(len(first_matrix)):
+        for second_element in range(len(first_matrix)):
+            temp = round(first_matrix[first_element][second_element] - \
+                second_matrix[first_element][second_element], 2)
             if temp < 0.01:
-                result_matrix[i][j] = 0.01
+                result_matrix[first_element][second_element] = 0.01
             else:
-                result_matrix[i][j] = temp
+                result_matrix[first_element][second_element] = temp
     return result_matrix
 
 
 def choose_way_random(array):
-    rand = round(random.random(), 4)
+    rand = round(random(), 4)
     summ = 0
-    for i in range(len(array)):
-        if summ + array[i] > rand:
-            return i
+    for element in range(len(array)):
+        if summ + array[element] > rand:
+            return element
         else:
-            summ += array[i]
+            summ += array[element]
     return len(array) - 1
 
 
@@ -67,8 +70,7 @@ def choose_way(temp_distance_matrix, pheromon_matrix, current_city):
         pheromon_matrix[current_city]))
     reducted_value_array = [round(reducted_value(value, raw_values_array), 4)
                             for value in raw_values_array]
-    chose = choose_way_random(reducted_value_array)
-    return chose
+    return choose_way_random(reducted_value_array)
 
 
 def update_global_sum_values(temp_total_distance, temp_pheromon_matrix):
@@ -124,8 +126,8 @@ def main(distance_matrix, pheromon_matrix, amount_of_ants):
     for _ in range(amount_of_ants):
         temp_total_distance = 0
         current_city = 0
-        city_to_visit = copy.deepcopy(distance_matrix[0])
-        temp_distance_matrix = copy.deepcopy(distance_matrix)
+        city_to_visit = deepcopy(distance_matrix[0])
+        temp_distance_matrix = deepcopy(distance_matrix)
         temp_pheromon_matrix = [[0 for i in range(len(pheromon_matrix))]
                                 for i in range(len(pheromon_matrix))]
 
@@ -175,8 +177,8 @@ def main(distance_matrix, pheromon_matrix, amount_of_ants):
 
 
 # start timer of excecution time
-start_time = time.time()
+start_time = time()
 main(o_distance_matrix, pheromon_matrix, 100)
 
 # display excecution time
-print(f'Total excecution time: {round(time.time() - start_time, 3)}s\n\n')
+print(f'Total excecution time: {round(time() - start_time, 3)}s\n\n')
