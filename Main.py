@@ -101,11 +101,13 @@ def update_temp_variables(current_city, chosen_way):
 
 
 def main(distance_matrix, pheromon_matrix, amount_of_ants):
+
     # global variables to count stuff
     global min_distance
     global max_distance
     global total_distance
     global ants_survived
+
     # global temporal variables to track state of ant
     global city_to_visit
     global temp_total_distance
@@ -164,6 +166,7 @@ def main(distance_matrix, pheromon_matrix, amount_of_ants):
                     temp_pheromon_matrix)
                 break
 
+    # display statistic.
     print(f'\n\nTotal distance covered: {total_distance}km \n'
           f'Average distance: {total_distance / ants_survived}km \n'
           f'Ants survived: {ants_survived} \n'
@@ -171,6 +174,9 @@ def main(distance_matrix, pheromon_matrix, amount_of_ants):
           f'Shortest way: {min_distance}km')
 
 
+# start timer of excecution time
 start_time = time.time()
 main(o_distance_matrix, pheromon_matrix, 100)
+
+# display excecution time
 print(f'Total excecution time: {round(time.time() - start_time, 3)}s\n\n')
