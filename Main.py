@@ -4,29 +4,22 @@ from random import random
 from time import time
 from copy import deepcopy
 
-# region data
-with open('distance_matrix.data', 'rb') as file:
-    o_distance_matrix = load(file)
-
-global pheromon_matrix
-# 0.01 is a default value for cell in pheromon value
-pheromon_matrix = [[0.01 for _ in range(len(o_distance_matrix))]
-                    for _ in range(len(o_distance_matrix))]
-alpha = 0.1
-beta = 0.5
-# endregion
-
 
 # region functions
-def raw_path_value(distance, pheromon):
-    global beta
+def get_raw_value_of_path(distance: int, pheromone: float, beta: float):
+    """Calculate value of the specific path based on it's distance, pheromone, and beta value
+
+    :param distance: The distance value of the path
+    :param pheromon: Value of the pheromone on that path
+    :param beta: Coefficient
+    """
     if distance > 0:
-        return round(pheromon * ((1 / distance) ** beta), 4)
+        return round(pheromone * ((1 / distance) ** beta), 4)
     else:
         return 0
 
 
-def reducted_value(element_value, array):
+def get_reducted_value_of_path(element_value, array):
     return element_value / sum(array)
 
 
@@ -44,8 +37,8 @@ def sub_matrix(first_matrix, second_matrix):
                      for _ in range(len(first_matrix))]
     for first_element in range(len(first_matrix)):
         for second_element in range(len(first_matrix)):
-            temp = round(first_matrix[first_element][second_element] - \
-                second_matrix[first_element][second_element], 2)
+            temp = round(first_matrix[first_element][second_element] -
+                         second_matrix[first_element][second_element], 2)
             if temp < 0.01:
                 result_matrix[first_element][second_element] = 0.01
             else:
@@ -66,56 +59,14 @@ def choose_way_random(array):
 
 def choose_way(temp_distance_matrix, pheromon_matrix, current_city):
     raw_values_array = list(map(
-        raw_path_value, temp_distance_matrix[current_city],
+        get_raw_path_value, temp_distance_matrix[current_city],
         pheromon_matrix[current_city]))
     reducted_value_array = [round(reducted_value(value, raw_values_array), 4)
                             for value in raw_values_array]
     return choose_way_random(reducted_value_array)
 
 
-def update_global_sum_values(temp_total_distance, temp_pheromon_matrix):
-    global min_distance
-    global max_distance
-    global total_distance
-    global pheromon_matrix
-
-    total_distance += temp_total_distance
-    pheromon_matrix = sum_matrix(
-        pheromon_matrix, temp_pheromon_matrix)
-    if max_distance < temp_total_distance:
-        max_distance = temp_total_distance
-    if min_distance > temp_total_distance > 0:
-        min_distance = temp_total_distance
-
-
-def update_temp_variables(current_city, chosen_way):
-    global temp_distance_matrix
-    global temp_pheromon_distance
-    global temp_total_distance
-    global city_to_visit
-
-    temp_total_distance += \
-        temp_distance_matrix[current_city][chosen_way]
-    temp_distance_matrix[current_city][chosen_way] = -1
-    city_to_visit[current_city] = -1
-    temp_pheromon_matrix[current_city][chosen_way] += 0.01
-# endregion
-
-
-def main(distance_matrix, pheromon_matrix, amount_of_ants):
-
-    # global variables to count stuff
-    global min_distance
-    global max_distance
-    global total_distance
-    global ants_survived
-
-    # global temporal variables to track state of ant
-    global city_to_visit
-    global temp_total_distance
-    global temp_pheromon_matrix
-    global temp_distance_matrix
-
+def one_try(distance_matrix, pheromon_matrix, amount_of_ants):
     # set variables for ability to compare later
     max_distance = 0
     total_distance = 0
@@ -149,7 +100,13 @@ def main(distance_matrix, pheromon_matrix, amount_of_ants):
 
                     # updating temporal variables
                     # to track current state
-                    update_temp_variables(current_city, chosen_way)
+                    temp_total_distance += \
+                        temp_distance_matrix[current_city][chosen_way]
+
+                    temp_distance_matrix[current_city][chosen_way] = -1
+                    city_to_visit[current_city] = -1
+
+                    temp_pheromon_matrix[current_city][chosen_way] += 0.01
 
                     # changing the city
                     current_city = chosen_way
@@ -163,9 +120,13 @@ def main(distance_matrix, pheromon_matrix, amount_of_ants):
                 # increase value of alive ants and
                 # update global variables to collect statistic
                 ants_survived += 1
-                update_global_sum_values(
-                    temp_total_distance,
-                    temp_pheromon_matrix)
+                total_distance += temp_total_distance
+                pheromon_matrix = sum_matrix(
+                    pheromon_matrix, temp_pheromon_matrix)
+                if max_distance < temp_total_distance:
+                    max_distance = temp_total_distance
+                if min_distance > temp_total_distance > 0:
+                    min_distance = temp_total_distance
                 break
 
     # display statistic.
@@ -177,8 +138,23 @@ def main(distance_matrix, pheromon_matrix, amount_of_ants):
 
 
 # start timer of excecution time
-start_time = time()
-main(o_distance_matrix, pheromon_matrix, 100)
 
-# display excecution time
-print(f'Total excecution time: {round(time() - start_time, 3)}s\n\n')
+
+
+def main():
+    with open('distance_matrix.data', 'rb') as file:
+        o_distance_matrix = load(file)
+
+    default_pheromone_value = 0.01
+    pheromone_matrix = [[default_pheromone_value for _ in range(len(o_distance_matrix))]
+                   for _ in range(len(o_distance_matrix))]
+    alpha = 0.1
+    beta = 0.5
+
+
+if __name__ == "__main__":
+
+    start_time = time()
+    main(o_distance_matrix, pheromon_matrix, 100)
+    # display excecution time
+    print(f'Total excecution time: {round(time() - start_time, 3)}s\n\n')
