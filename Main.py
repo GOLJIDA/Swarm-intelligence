@@ -6,21 +6,37 @@ from copy import deepcopy
 
 
 # region functions
-def get_raw_value_of_path(distance: int, pheromone: float, beta: float):
-    """Calculate value of the specific path based on it's distance, pheromone, and beta value
+def get_raw_value_of_path(distance, pheromone, beta):
+    '''Calculates value of the specific path based on it's distance,
+    pheromone, and beta values
 
     :param distance: The distance value of the path
-    :param pheromon: Value of the pheromone on that path
-    :param beta: Coefficient
-    """
+    :type distance: float
+    :param pheromone: Value of the pheromone on that path
+    :type pheromone: float
+    :param beta: Coefficient of how mych ants relies on pheromone value
+    :type beta: float
+    :return: Returns value calculated by formula if distance is bigger
+    than zero, to avoid ZeroDivisionError. Otherwise returns zero
+    :rtype: float, 0
+    '''
     if distance > 0:
         return round(pheromone * ((1 / distance) ** beta), 4)
     else:
         return 0
 
 
-def get_reducted_value_of_path(element_value, array):
-    return element_value / sum(array)
+def get_reducted_value_of_path(element_value, list):
+    '''Gets the path value relative to the sum of all elements of the list
+
+    :param element_value: Value of the element from the list
+    :type element_value: float, 0
+    :param list: List containing all the values
+    :type list: list
+    :return: Returns reducted value of the element
+    :rtype: float
+    '''
+    return element_value / sum(list)
 
 
 def sum_matrix(first_matrix, second_matrix):
@@ -57,16 +73,17 @@ def choose_way_random(array):
     return len(array) - 1
 
 
-def choose_way(temp_distance_matrix, pheromon_matrix, current_city):
+def choose_way(temp_distance_matrix, pheromone_matrix, current_city):
     raw_values_array = list(map(
-        get_raw_path_value, temp_distance_matrix[current_city],
-        pheromon_matrix[current_city]))
-    reducted_value_array = [round(reducted_value(value, raw_values_array), 4)
-                            for value in raw_values_array]
+        get_raw_value_of_path, temp_distance_matrix[current_city],
+        pheromone_matrix[current_city]))
+    reducted_value_array =\
+        [round(get_reducted_value_of_path(value, raw_values_array), 4)
+         for value in raw_values_array]
     return choose_way_random(reducted_value_array)
 
 
-def one_try(distance_matrix, pheromon_matrix, amount_of_ants):
+def one_try(distance_matrix, pheromone_matrix, amount_of_ants):
     # set variables for ability to compare later
     max_distance = 0
     total_distance = 0
@@ -79,8 +96,8 @@ def one_try(distance_matrix, pheromon_matrix, amount_of_ants):
         current_city = 0
         city_to_visit = deepcopy(distance_matrix[0])
         temp_distance_matrix = deepcopy(distance_matrix)
-        temp_pheromon_matrix = [[0 for i in range(len(pheromon_matrix))]
-                                for i in range(len(pheromon_matrix))]
+        temp_pheromone_matrix = [[0 for i in range(len(pheromone_matrix))]
+                                 for i in range(len(pheromone_matrix))]
 
         while True:
 
@@ -95,7 +112,7 @@ def one_try(distance_matrix, pheromon_matrix, amount_of_ants):
                     # pathes from current point
                     chosen_way = choose_way(
                         temp_distance_matrix,
-                        pheromon_matrix,
+                        pheromone_matrix,
                         current_city)
 
                     # updating temporal variables
@@ -106,39 +123,28 @@ def one_try(distance_matrix, pheromon_matrix, amount_of_ants):
                     temp_distance_matrix[current_city][chosen_way] = -1
                     city_to_visit[current_city] = -1
 
-                    temp_pheromon_matrix[current_city][chosen_way] += 0.01
+                    temp_pheromone_matrix[current_city][chosen_way] += 0.01
 
                     # changing the city
                     current_city = chosen_way
                 else:
-                    # decrease value of pheromons on path because
+                    # decrease value of pheromones on path because
                     # it leads to death
-                    pheromon_matrix = sub_matrix(
-                        pheromon_matrix, temp_pheromon_matrix)
+                    pheromone_matrix = sub_matrix(
+                        pheromone_matrix, temp_pheromone_matrix)
                     break
             else:
                 # increase value of alive ants and
                 # update global variables to collect statistic
                 ants_survived += 1
                 total_distance += temp_total_distance
-                pheromon_matrix = sum_matrix(
-                    pheromon_matrix, temp_pheromon_matrix)
+                pheromone_matrix = sum_matrix(
+                    pheromone_matrix, temp_pheromone_matrix)
                 if max_distance < temp_total_distance:
                     max_distance = temp_total_distance
                 if min_distance > temp_total_distance > 0:
                     min_distance = temp_total_distance
                 break
-
-    # display statistic.
-    print(f'\n\nTotal distance covered: {total_distance}km \n'
-          f'Average distance: {total_distance / ants_survived}km \n'
-          f'Ants survived: {ants_survived} \n'
-          f'Longest way: {max_distance}km \n'
-          f'Shortest way: {min_distance}km')
-
-
-# start timer of excecution time
-
 
 
 def main():
@@ -146,15 +152,15 @@ def main():
         o_distance_matrix = load(file)
 
     default_pheromone_value = 0.01
-    pheromone_matrix = [[default_pheromone_value for _ in range(len(o_distance_matrix))]
-                   for _ in range(len(o_distance_matrix))]
+    pheromone_matrix = [[default_pheromone_value
+                        for _ in range(len(o_distance_matrix))]
+                        for _ in range(len(o_distance_matrix))]
     alpha = 0.1
     beta = 0.5
 
 
 if __name__ == "__main__":
-
     start_time = time()
-    main(o_distance_matrix, pheromon_matrix, 100)
+    main()
     # display excecution time
     print(f'Total excecution time: {round(time() - start_time, 3)}s\n\n')
