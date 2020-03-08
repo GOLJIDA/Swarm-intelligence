@@ -63,9 +63,7 @@ def summation_of_matrices(first_matrix, second_matrix, ant_total_distance):
     :rtype: list
     """
 
-    total_vertices = sum(sum(second_matrix, []))
-
-    print(ant_total_distance / total_vertices)
+    new_pheromone_value = 1 / ant_total_distance * 1000
 
     result_matrix = [[0 for _ in range(len(first_matrix))]
                      for _ in range(len(first_matrix))]
@@ -77,38 +75,33 @@ def summation_of_matrices(first_matrix, second_matrix, ant_total_distance):
     return result_matrix
 
 
-def subtraction_of_matrices(first_matrix, second_matrix, ant_total_distance):
-    """Subtracting one matrix from another. Uses to update pheromone matrix
-    and save died ant path to decrease chance of choosing the way of the
-    ant that created second matrix
+# def subtraction_of_matrices(first_matrix, second_matrix, alpha):
+#     """Subtracting one matrix from another. Uses to update pheromone matrix
+#     and save died ant path to decrease chance of choosing the way of the
+#     ant that created second matrix
 
-    :param first_matrix: base pheromone matrix that ants use
-    :type first_matrix: list
-    :param second_matrix: pheromone matrix that represents ant's path
-    :type second_matrix: list
-    :param ant_total_distance: total distance that ant passed
-    :type ant_total_distance: int
-    :return: new global pheromone matrix that ants will be using
-    :rtype: list
-    """
+#     :param first_matrix: base pheromone matrix that ants use
+#     :type first_matrix: list
+#     :param second_matrix: pheromone matrix that represents ant's path
+#     :type second_matrix: list
+#     :param ant_total_distance: total distance that ant passed
+#     :type ant_total_distance: int
+#     :return: new global pheromone matrix that ants will be using
+#     :rtype: list
+#     """
+#     result_matrix = [[0 for _ in range(len(first_matrix))]
+#                      for _ in range(len(first_matrix))]
 
-    total_vertices = sum(sum(second_matrix, []))
+#     for first_element in range(len(first_matrix)):
+#         for second_element in range(len(first_matrix)):
+#             temp = round(first_matrix[first_element][second_element] -
+#                          second_matrix[first_element][second_element], 2)
+#             if temp < 0.01:
+#                 result_matrix[first_element][second_element] = 0.01
+#             else:
+#                 result_matrix[first_element][second_element] = alpha
 
-    new_value = pheromone_value / total_vertices
-
-    result_matrix = [[0 for _ in range(len(first_matrix))]
-                     for _ in range(len(first_matrix))]
-
-    for first_element in range(len(first_matrix)):
-        for second_element in range(len(first_matrix)):
-            temp = round(first_matrix[first_element][second_element] -
-                         second_matrix[first_element][second_element], 2)
-            if temp < 0.01:
-                result_matrix[first_element][second_element] = 0.01
-            else:
-                result_matrix[first_element][second_element] = temp
-
-    return result_matrix
+#     return result_matrix
 
 
 def get_random_way_from_list(array):
@@ -164,20 +157,15 @@ def choose_from_suitable_ways(temp_distance_matrix,
                 pheromone_matrix[current_city],
                 repeat(beta))
         )
-    reducted_value_array = \
-        [round(
-               get_reducted_value_of_path(value, raw_values_array),
-               4
-              ) for value in raw_values_array]
+
+    reducted_value_array = [round(get_reducted_value_of_path(value, raw_values_array),4) for value in raw_values_array]
 
     return get_random_way_from_list(reducted_value_array)
 
 
 def one_try(distance_matrix, pheromone_matrix,
-            amount_of_ants, amount_of_nests, beta):
+            amount_of_ants, amount_of_nests, beta, alpha):
     # TODO:
-    #   doc
-    #   add check for TabuList
     #   add blocking of all the ways that goes to a visited vertices
     """
 
@@ -198,75 +186,56 @@ def one_try(distance_matrix, pheromone_matrix,
     """
 
     # set variables for ability to compare later
-    amount_of_ants = amount_of_ants / amount_of_nests
+    ants_in_nest = int(amount_of_ants / amount_of_nests)
     max_distance = 0
     total_distance = 0
     min_distance = 10000000
     ants_survived = 0
+
+    best_distance = 0
+    worst_distance = 0
     for _ in range(amount_of_nests):
-        # for amount of ants
-        for _ in range(amount_of_ants):
-            temp_total_distance = 0
-            current_city = 0
-            city_to_visit = deepcopy(distance_matrix[0])
+        nest_best_distance = 0
+        nest_worst_distance = 10000000
+        for _ in range(ants_in_nest):
+            ant_total_distance = 0
             temp_distance_matrix = deepcopy(distance_matrix)
-            temp_pheromone_matrix = [[0 for _ in range(len(pheromone_matrix))]
-                                     for _ in range(len(pheromone_matrix))]
+            current_city = 0
+            ant_way_record = []
             while True:
                 # if not all cities are visited
-                if not all(city == -1 for city in city_to_visit):
+                if any([temp_distance_matrix[0]]):
+                    # using method to choose the way out of all  available
+                    # paths from current point
+                    chosen_way = choose_from_suitable_ways(
+                        temp_distance_matrix,
+                        pheromone_matrix,
+                        current_city,
+                        beta)
 
-                    # if not all ways are visited
-                    if not all(ways == -1 for ways in
-                               temp_distance_matrix[current_city]):
+                    ant_way_record.append(chosen_way)
 
-                        # using method to choose the way out of all  available
-                        # paths from current point
-                        chosen_way = choose_from_suitable_ways(
-                            temp_distance_matrix,
-                            pheromone_matrix,
-                            current_city,
-                            beta)
+                    # updating temporal variables
+                    # to track current state
+                    ant_total_distance += \
+                        temp_distance_matrix[current_city][chosen_way]
 
-                        # updating temporal variables
-                        # to track current state
-                        temp_total_distance += \
-                            temp_distance_matrix[current_city][chosen_way]
+                    for x in temp_distance_matrix:
+                        x[chosen_way] = 0
 
-                        for x in temp_distance_matrix:
-                            x[chosen_way] = -1
-
-                        city_to_visit[current_city] = -1
-
-                        temp_pheromone_matrix[current_city][chosen_way] += 1
-
-                        # changing the city
-                        current_city = chosen_way
-                    else:
-                        # decrease value of pheromones on path because
-                        # it leads to death
-                        pheromone_matrix = \
-                            subtraction_of_matrices(pheromone_matrix,
-                                                    temp_pheromone_matrix,
-                                                    temp_total_distance)
-                        break
+                    # changing the city
+                    current_city = chosen_way
                 else:
                     # increase value of alive ants and
                     # update global variables to collect statistic
                     ants_survived += 1
 
-                    total_distance += temp_total_distance
-                    pheromone_matrix = \
-                        summation_of_matrices(pheromone_matrix,
-                                              temp_pheromone_matrix,
-                                              temp_total_distance)
+                    if ant_total_distance < nest_best_distance:
+                        nest_best_distance = ant_total_distance
+                    elif ant_total_distance > nest_worst_distance:
+                        nest_worst_distance = ant_total_distance
 
-                    if max_distance < temp_total_distance:
-                        max_distance = temp_total_distance
-                    if min_distance > temp_total_distance > 0:
-                        min_distance = temp_total_distance
                     break
-    print(min_distance)
 
 
 def main():
@@ -277,13 +246,24 @@ def main():
     with open('distance_matrix.data', 'rb') as file:
         o_distance_matrix = load(file)
 
+    for i in range(len(o_distance_matrix)):
+        for j in range(len(o_distance_matrix[i])):
+            if o_distance_matrix[i][j] == -1:
+                o_distance_matrix[i][j] = 0
+
+    for i in o_distance_matrix:
+        i[0] = 0
+
+    for i in o_distance_matrix:
+        print(i)
+
     default_pheromone_value = 0.01
     pheromone_matrix = [[default_pheromone_value
                          for _ in range(len(o_distance_matrix))]
                         for _ in range(len(o_distance_matrix))]
-    # alpha = 0.1
+    alpha = 0.01
     beta = 0.5
-    one_try(o_distance_matrix, pheromone_matrix, 700, 15, beta)
+    one_try(o_distance_matrix, pheromone_matrix, 900, 15, beta, alpha)
 
 
 if __name__ == "__main__":
@@ -291,8 +271,3 @@ if __name__ == "__main__":
     main()
     # display execution time
     print(f'Total execution time: {round(time() - start_time, 3)}s\n\n')
-
-
-# TODO
-#   tabu list
-#   applying new pheromone matrix
