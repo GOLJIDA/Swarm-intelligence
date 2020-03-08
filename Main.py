@@ -20,7 +20,8 @@ def get_raw_value_of_path(distance, pheromone, beta):
     :type distance: float
     :param pheromone: Value of the pheromone on that path
     :type pheromone: float
-    :param beta: Coefficient of how much ants relies on pheromone value, gets passed to subfunction
+    :param beta: Coefficient of how much ants relies on pheromone value,
+    gets passed to subfunction
     :type beta: float
     :return: Returns value calculated by formula if distance is bigger
     than zero, to avoid ZeroDivisionError. Otherwise returns zero.
@@ -47,17 +48,24 @@ def get_reducted_value_of_path(element_value, array):
     return element_value / sum(array)
 
 
-def summation_of_matrices(first_matrix, second_matrix):
-    """Adding two double dimensional lists. Uses to update pheromone matrix and save survived ant path to
-    increase chance of choosing the way of the ant that created second matrix
+def summation_of_matrices(first_matrix, second_matrix, ant_total_distance):
+    """Adding two double dimensional lists. Uses to update pheromone matrix
+    and save survived ant path to increase chance of choosing the way of
+    the ant that created second matrix
 
     :param first_matrix: base pheromone matrix that ants use
     :type first_matrix: list
     :param second_matrix: pheromone matrix that represents ant's path
     :type second_matrix: list
+    :param ant_total_distance: total distance that ant passed
+    :type ant_total_distance: int
     :return: new global pheromone matrix that ants will be using
     :rtype: list
     """
+
+    total_vertices = sum(sum(second_matrix, []))
+
+    print(ant_total_distance / total_vertices)
 
     result_matrix = [[0 for _ in range(len(first_matrix))]
                      for _ in range(len(first_matrix))]
@@ -69,17 +77,24 @@ def summation_of_matrices(first_matrix, second_matrix):
     return result_matrix
 
 
-def subtraction_of_matrices(first_matrix, second_matrix):
-    """Subtracting one matrix from another. Uses to update pheromone matrix and save died ant path to
-    decrease chance of choosing the way of the ant that created second matrix
+def subtraction_of_matrices(first_matrix, second_matrix, ant_total_distance):
+    """Subtracting one matrix from another. Uses to update pheromone matrix
+    and save died ant path to decrease chance of choosing the way of the
+    ant that created second matrix
 
     :param first_matrix: base pheromone matrix that ants use
     :type first_matrix: list
     :param second_matrix: pheromone matrix that represents ant's path
     :type second_matrix: list
+    :param ant_total_distance: total distance that ant passed
+    :type ant_total_distance: int
     :return: new global pheromone matrix that ants will be using
     :rtype: list
     """
+
+    total_vertices = sum(sum(second_matrix, []))
+
+    new_value = pheromone_value / total_vertices
 
     result_matrix = [[0 for _ in range(len(first_matrix))]
                      for _ in range(len(first_matrix))]
@@ -99,11 +114,13 @@ def subtraction_of_matrices(first_matrix, second_matrix):
 def get_random_way_from_list(array):
     """Gets one way from the list of reducted values of the ways.
 
-    Comparing the random value to the sum of the raw values, starting from first until
-    the sum is not bigger than the random value from the random function. If sum of all
-    the values is not bigger than random value(due to rounding it's possible to reduce all
-    the values of the array to one, but still get the sum lower than one), than it will
-    get another random value and will try to get sum bigger than new random value.
+    Comparing the random value to the sum of the raw values,
+    starting from first until the sum is not bigger than the
+    random value from the random function. If sum of all
+    the values is not bigger than random value(due to rounding
+    it's possible to reduce all the values of the array to one, but
+    still get the sum lower than one), than it will get another random
+    value and will try to get sum bigger than new random value.
     Does this until sum of the values is not greater than random value.
 
     :param array: list of reducted values
@@ -122,7 +139,10 @@ def get_random_way_from_list(array):
                 summ += array[element]
 
 
-def choose_from_suitable_ways(temp_distance_matrix, pheromone_matrix, current_city, beta):
+def choose_from_suitable_ways(temp_distance_matrix,
+                              pheromone_matrix,
+                              current_city,
+                              beta):
     # TODO:
     #     doc
     """
@@ -139,92 +159,113 @@ def choose_from_suitable_ways(temp_distance_matrix, pheromone_matrix, current_ci
     raw_values_array = \
         list(
             map(
-                get_raw_value_of_path, temp_distance_matrix[current_city], pheromone_matrix[current_city], repeat(beta))
+                get_raw_value_of_path,
+                temp_distance_matrix[current_city],
+                pheromone_matrix[current_city],
+                repeat(beta))
         )
     reducted_value_array = \
         [round(
-            get_reducted_value_of_path(value, raw_values_array), 4) for value in raw_values_array]
+               get_reducted_value_of_path(value, raw_values_array),
+               4
+              ) for value in raw_values_array]
 
     return get_random_way_from_list(reducted_value_array)
 
 
-def one_try(distance_matrix, pheromone_matrix, amount_of_ants, beta):
+def one_try(distance_matrix, pheromone_matrix,
+            amount_of_ants, amount_of_nests, beta):
     # TODO:
     #   doc
     #   add check for TabuList
     #   add blocking of all the ways that goes to a visited vertices
     """
 
-    :param distance_matrix:
-    :param pheromone_matrix:
-    :param amount_of_ants:
-    :param beta: Coefficient of how much ants relies on pheromone value, gets passed to subfunction
+    :param distance_matrix: matrix that contains
+    distance between each citys
+    :type distance_matrix: 2d array
+    :param pheromone_matrix: matrix that represents
+     pheromone value on each path
+    :type pheromone_matrix: 2d array
+    :param amount_of_ants: amount of ants that will be created
+    :type amount_of_ants: int
+    :param amount_of_nests: amount of nests. Amount
+    of ants in each nest is equal to amount of ants divided by amount of nests
+    :param beta: Coefficient of how much ants relies on pheromone value, gets
+    passed to subfunction
     :type beta: float
-    :return:
-    :rtype:
+    :return: void
     """
 
     # set variables for ability to compare later
+    amount_of_ants = amount_of_ants / amount_of_nests
     max_distance = 0
     total_distance = 0
     min_distance = 10000000
     ants_survived = 0
+    for _ in range(amount_of_nests):
+        # for amount of ants
+        for _ in range(amount_of_ants):
+            temp_total_distance = 0
+            current_city = 0
+            city_to_visit = deepcopy(distance_matrix[0])
+            temp_distance_matrix = deepcopy(distance_matrix)
+            temp_pheromone_matrix = [[0 for _ in range(len(pheromone_matrix))]
+                                     for _ in range(len(pheromone_matrix))]
+            while True:
+                # if not all cities are visited
+                if not all(city == -1 for city in city_to_visit):
 
-    # for amount of ants
-    for _ in range(amount_of_ants):
-        temp_total_distance = 0
-        current_city = 0
-        city_to_visit = deepcopy(distance_matrix[0])
-        temp_distance_matrix = deepcopy(distance_matrix)
-        temp_pheromone_matrix = [[0 for _ in range(len(pheromone_matrix))]
-                                 for _ in range(len(pheromone_matrix))]
+                    # if not all ways are visited
+                    if not all(ways == -1 for ways in
+                               temp_distance_matrix[current_city]):
 
-        while True:
-            # if not all cities are visited
-            if not all(city == -1 for city in city_to_visit):
+                        # using method to choose the way out of all  available
+                        # paths from current point
+                        chosen_way = choose_from_suitable_ways(
+                            temp_distance_matrix,
+                            pheromone_matrix,
+                            current_city,
+                            beta)
 
-                # if not all ways are visited
-                if not all(ways == -1 for ways in
-                           temp_distance_matrix[current_city]):
+                        # updating temporal variables
+                        # to track current state
+                        temp_total_distance += \
+                            temp_distance_matrix[current_city][chosen_way]
 
-                    # using method to choose the way out of all available
-                    # paths from current point
-                    chosen_way = choose_from_suitable_ways(
-                        temp_distance_matrix,
-                        pheromone_matrix,
-                        current_city,
-                        beta)
+                        for x in temp_distance_matrix:
+                            x[chosen_way] = -1
 
-                    # updating temporal variables
-                    # to track current state
-                    temp_total_distance += \
-                        temp_distance_matrix[current_city][chosen_way]
+                        city_to_visit[current_city] = -1
 
-                    temp_distance_matrix[current_city][chosen_way] = -1
-                    city_to_visit[current_city] = -1
+                        temp_pheromone_matrix[current_city][chosen_way] += 1
 
-                    temp_pheromone_matrix[current_city][chosen_way] += 0.01
-
-                    # changing the city
-                    current_city = chosen_way
+                        # changing the city
+                        current_city = chosen_way
+                    else:
+                        # decrease value of pheromones on path because
+                        # it leads to death
+                        pheromone_matrix = \
+                            subtraction_of_matrices(pheromone_matrix,
+                                                    temp_pheromone_matrix,
+                                                    temp_total_distance)
+                        break
                 else:
-                    # decrease value of pheromones on path because
-                    # it leads to death
-                    pheromone_matrix = subtraction_of_matrices(
-                        pheromone_matrix, temp_pheromone_matrix)
+                    # increase value of alive ants and
+                    # update global variables to collect statistic
+                    ants_survived += 1
+
+                    total_distance += temp_total_distance
+                    pheromone_matrix = \
+                        summation_of_matrices(pheromone_matrix,
+                                              temp_pheromone_matrix,
+                                              temp_total_distance)
+
+                    if max_distance < temp_total_distance:
+                        max_distance = temp_total_distance
+                    if min_distance > temp_total_distance > 0:
+                        min_distance = temp_total_distance
                     break
-            else:
-                # increase value of alive ants and
-                # update global variables to collect statistic
-                ants_survived += 1
-                total_distance += temp_total_distance
-                pheromone_matrix = summation_of_matrices(
-                    pheromone_matrix, temp_pheromone_matrix)
-                if max_distance < temp_total_distance:
-                    max_distance = temp_total_distance
-                if min_distance > temp_total_distance > 0:
-                    min_distance = temp_total_distance
-                break
     print(min_distance)
 
 
@@ -240,9 +281,9 @@ def main():
     pheromone_matrix = [[default_pheromone_value
                          for _ in range(len(o_distance_matrix))]
                         for _ in range(len(o_distance_matrix))]
-    alpha = 0.1
+    # alpha = 0.1
     beta = 0.5
-    one_try(o_distance_matrix, pheromone_matrix, 200, beta)
+    one_try(o_distance_matrix, pheromone_matrix, 700, 15, beta)
 
 
 if __name__ == "__main__":
@@ -250,3 +291,8 @@ if __name__ == "__main__":
     main()
     # display execution time
     print(f'Total execution time: {round(time() - start_time, 3)}s\n\n')
+
+
+# TODO
+#   tabu list
+#   applying new pheromone matrix
