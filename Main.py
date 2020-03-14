@@ -63,8 +63,6 @@ def summation_of_matrices(first_matrix, second_matrix, ant_total_distance):
     :rtype: list
     """
 
-    new_pheromone_value = 1 / ant_total_distance * 1000
-
     result_matrix = [[0 for _ in range(len(first_matrix))]
                      for _ in range(len(first_matrix))]
 
@@ -136,8 +134,6 @@ def choose_from_suitable_ways(temp_distance_matrix,
                               pheromone_matrix,
                               current_city,
                               beta):
-    # TODO:
-    #     doc
     """
 
     :param temp_distance_matrix:
@@ -165,8 +161,6 @@ def choose_from_suitable_ways(temp_distance_matrix,
 
 def one_try(distance_matrix, pheromone_matrix,
             amount_of_ants, amount_of_nests, beta, alpha):
-    # TODO:
-    #   add blocking of all the ways that goes to a visited vertices
     """
 
     :param distance_matrix: matrix that contains
@@ -239,10 +233,6 @@ def one_try(distance_matrix, pheromone_matrix,
 
 
 def main():
-    # TODO:
-    #     doc
-    #     apply threads:
-    #         apply gradient descent
     with open('distance_matrix.data', 'rb') as file:
         o_distance_matrix = load(file)
 
@@ -271,3 +261,8 @@ if __name__ == "__main__":
     main()
     # display execution time
     print(f'Total execution time: {round(time() - start_time, 3)}s\n\n')
+
+
+# TODO
+#   Update tracking mechanic
+#   Add threads to calculate most efficient retio of constants
